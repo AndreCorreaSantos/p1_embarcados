@@ -165,12 +165,13 @@ static void task_oled(void *pvParameters) {
 			sprintf(string_index,"index: %d ",index);
 			while(i<10){
 				pio_clear(LED_1_PIO, LED_1_IDX_MASK);
-				vTaskDelay(200);
+				vTaskDelay(100);
 				pio_set(LED_1_PIO, LED_1_IDX_MASK);
-				vTaskDelay(200);
+				vTaskDelay(100);
 				i++;
 			}
 			gfx_mono_draw_string(string_soma, 0, 10, &sysfont);
+			gfx_mono_draw_string(string_index, 50, 25, &sysfont);
 
 			//pisca led
 		}
