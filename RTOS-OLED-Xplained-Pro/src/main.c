@@ -142,6 +142,9 @@ static void task_oled(void *pvParameters) {
 		if(xQueueReceive(xQueueValor,&(valor),(TickType_t) 0)){
 			soma[index] = soma[index]+valor;
 			soma[index] = soma[index] % 15;
+			if(soma[index] <= 0){
+				soma[index] = 0;
+			}
 			sprintf(string_soma,"0x%x%x%x%x ",soma[0],soma[1],soma[2],soma[3]);
 		}
 		if(xQueueReceive(xQueueCaractere,&(n_carac),(TickType_t) 0)){
@@ -158,6 +161,8 @@ static void task_oled(void *pvParameters) {
 			soma[2] = 0;
 			soma[3] = 0;
 			int i = 0;
+			sprintf(string_soma,"0x%x%x%x%x ",soma[0],soma[1],soma[2],soma[3]);
+			sprintf(string_index,"index: %d ",index);
 			while(i<10){
 				pio_clear(LED_1_PIO, LED_1_IDX_MASK);
 				vTaskDelay(200);
@@ -165,6 +170,7 @@ static void task_oled(void *pvParameters) {
 				vTaskDelay(200);
 				i++;
 			}
+			gfx_mono_draw_string(string_soma, 0, 10, &sysfont);
 
 			//pisca led
 		}
