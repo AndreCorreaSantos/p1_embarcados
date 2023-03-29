@@ -6,6 +6,11 @@
 #include "sysfont.h"
 
 
+#define LED_1_PIO PIOA
+#define LED_1_PIO_ID ID_PIOA
+#define LED_1_IDX 0
+#define LED_1_IDX_MASK (1 << LED_1_IDX)
+
 //clk
 #define clk_PIO     PIOC
 #define clk_PIO_ID  ID_PIOC
@@ -37,6 +42,7 @@ extern void xPortSysTickHandler(void);
 
 /** prototypes */
 QueueHandle_t xQueueValor;
+QueueHandle_t xQueueTempo;
 QueueHandle_t xQueueCaractere;
 
 volatile int dt_flag;
@@ -98,9 +104,22 @@ void clk_callback(void){
 // 	};
 // };
 void sw_callback(void){
-	int n_carac = 1;
 	BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-  	xQueueSendFromISR(xQueueCaractere, &n_carac, &xHigherPriorityTaskWoken);
+
+	if(pio_get(sw_PIO,PIO_INPUT,sw_PIO_PIN_MASK)){
+		int contagem = rtt_read_timer_value(RTT);
+		if(contagem > 5*32768){
+			int v = 1;
+			xQueueSendFromISR(xQueueTempo,&v,&xHigherPriorityTaskWoken); //manda um valor para fila de tempo para piscar led e zerar valores da lista
+		}
+	}
+	if(!pio_get(sw_PIO,PIO_INPUT,sw_PIO_PIN_MASK)){
+		rtt_init(RTT,1);
+		int n_carac = 1;
+  		xQueueSendFromISR(xQueueCaractere, &n_carac, &xHigherPriorityTaskWoken);
+	}
+
+
 };
 /************************************************************************/
 /* TASKS                                                                */
@@ -118,6 +137,7 @@ static void task_oled(void *pvParameters) {
 	int contador = 0;
 	int soma[4] = {0,0,0,0};
 	int index = 0;
+	int v;
 	for (;;)  {
 		if(xQueueReceive(xQueueValor,&(valor),(TickType_t) 0)){
 			soma[index] = soma[index]+valor;
@@ -130,9 +150,28 @@ static void task_oled(void *pvParameters) {
 			sprintf(string_index,"index: %d ",index);
 			gfx_mono_draw_string(string_index, 50, 25, &sysfont);
 		}
+		if(xQueueReceive(xQueueTempo,&(v),(TickType_t) 0)){
+			//zera index, zera array e pisca led
+			index = 0;
+			soma[0] = 0;
+			soma[1] = 0;
+			soma[2] = 0;
+			soma[3] = 0;
+			int i = 0;
+			while(i<10){
+				pio_clear(LED_1_PIO, LED_1_IDX_MASK);
+				vTaskDelay(1000);
+				pio_set(LED_1_PIO, LED_1_IDX_MASK);
+				vTaskDelay(1000);
+				i++;
+			}
+
+			//pisca led
+		}
 		gfx_mono_draw_string(string_soma, 0, 10, &sysfont);
 		//piscando
 		if(contador > 5){
+			//chamar task pisca
 			gfx_mono_draw_string(' ',(index+2)*6,10,&sysfont);
 		}
 		contador++;
@@ -143,27 +182,27 @@ static void task_oled(void *pvParameters) {
 	}
 }
 
-static void task_pisca(void *pvParameters) {
-	gfx_mono_ssd1306_init();
-	int contador = 0;
-	int index = 0;
-	int n_carac;
-	for (;;)  {
-		if(xQueueReceive(xQueueCaractere,&(n_carac),(TickType_t) 0)){
-			index += n_carac;
-			index = index % 4;
-		}
-		//piscando
-		if(contador > 5){
-			gfx_mono_draw_string(' ',(index+2)*6,10,&sysfont);
-		}
-		contador++;
-		contador = contador % 10;
-		vTaskDelay(50);
+// static void task_pisca(void *pvParameters) {
+// 	gfx_mono_ssd1306_init();
+// 	int contador = 0;
+// 	int index = 0;
+// 	int n_carac;
+// 	for (;;)  {
+// 		if(xQueueReceive(xQueueCaractere,&(n_carac),(TickType_t) 0)){
+// 			index += n_carac;
+// 			index = index % 4;
+// 		}
+// 		//piscando
+// 		if(contador > 5){
+// 			gfx_mono_draw_string(' ',(index+2)*6,10,&sysfont);
+// 		}
+// 		contador++;
+// 		contador = contador % 10;
+// 		vTaskDelay(50);
 		
 		
-	}
-}
+// 	}
+// }
 
 
 
@@ -187,6 +226,8 @@ static void configure_console(void) {
 }
 
 static void BUT_init(void) {
+	pmc_enable_periph_clk(LED_1_PIO_ID);
+	pio_configure(LED_1_PIO, PIO_OUTPUT_1, LED_1_IDX_MASK, PIO_DEFAULT);
 
 	pmc_enable_periph_clk(clk_PIO_ID);
   	pmc_enable_periph_clk(dt_PIO_ID);
@@ -217,7 +258,7 @@ static void BUT_init(void) {
 	//CONFIGS PARA sw
 	pio_configure(sw_PIO, PIO_INPUT, sw_PIO_PIN_MASK, PIO_DEBOUNCE);
 	pio_set_debounce_filter(sw_PIO, sw_PIO_PIN_MASK, 60);
-	pio_handler_set(sw_PIO, sw_PIO_ID, sw_PIO_PIN_MASK, PIO_IT_FALL_EDGE , sw_callback);
+	pio_handler_set(sw_PIO, sw_PIO_ID, sw_PIO_PIN_MASK, PIO_IT_EDGE , sw_callback);
 	pio_enable_interrupt(sw_PIO, sw_PIO_PIN_MASK);
 	pio_get_interrupt_status(sw_PIO);
 
@@ -242,7 +283,11 @@ int main(void) {
 
 	xQueueCaractere = xQueueCreate(100, sizeof(int));
 	if (xQueueCaractere == NULL)
-		printf("falha em criar a queue xQueueCaractere \n");
+		printf("falha em criar a queue xQueueCaractere \n");\
+
+	xQueueTempo = xQueueCreate(100, sizeof(int));
+	if (xQueueTempo == NULL)
+		printf("falha em criar a queue xQueueTempo \n");
 	/* Initialize the console uart */
 	configure_console();
 
