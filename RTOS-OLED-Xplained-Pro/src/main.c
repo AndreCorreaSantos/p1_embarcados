@@ -26,6 +26,9 @@
 #define TASK_OLED_STACK_SIZE                (1024*6/sizeof(portSTACK_TYPE))
 #define TASK_OLED_STACK_PRIORITY            (tskIDLE_PRIORITY)
 
+#define TASK_OLED_STACK_SIZE                (1024*6/sizeof(portSTACK_TYPE))
+#define TASK_OLED_STACK_PRIORITY            (tskIDLE_PRIORITY)
+
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask,  signed char *pcTaskName);
 extern void vApplicationIdleHook(void);
 extern void vApplicationTickHook(void);
@@ -103,26 +106,23 @@ void sw_callback(void){
 /* TASKS                                                                */
 /************************************************************************/
 
+
 static void task_oled(void *pvParameters) {
 	gfx_mono_ssd1306_init();
-  	char string_soma[10];
+  	char string_soma[10] = "0x0000";
 	char string_index[10];
   
   
 	int valor;
-	
 	int n_carac;
-
-	int soma = 0;
+	int contador = 0;
+	int soma[4] = {0,0,0,0};
 	int index = 0;
 	for (;;)  {
 		if(xQueueReceive(xQueueValor,&(valor),(TickType_t) 0)){
-			clk_flag = 0;
-			dt_flag = 0;
-			soma = soma+valor;
-			soma = soma % 15;
-			sprintf(string_soma,"soma: %d ",soma);
-			gfx_mono_draw_string(string_soma, 0, 10, &sysfont);
+			soma[index] = soma[index]+valor;
+			soma[index] = soma[index] % 15;
+			sprintf(string_soma,"0x%x%x%x%x ",soma[0],soma[1],soma[2],soma[3]);
 		}
 		if(xQueueReceive(xQueueCaractere,&(n_carac),(TickType_t) 0)){
 			index += n_carac;
@@ -130,10 +130,42 @@ static void task_oled(void *pvParameters) {
 			sprintf(string_index,"index: %d ",index);
 			gfx_mono_draw_string(string_index, 50, 25, &sysfont);
 		}
+		gfx_mono_draw_string(string_soma, 0, 10, &sysfont);
+		//piscando
+		if(contador > 5){
+			gfx_mono_draw_string(' ',(index+2)*6,10,&sysfont);
+		}
+		contador++;
+		contador = contador % 10;
+		vTaskDelay(50);
 		
 		
 	}
 }
+
+static void task_pisca(void *pvParameters) {
+	gfx_mono_ssd1306_init();
+	int contador = 0;
+	int index = 0;
+	int n_carac;
+	for (;;)  {
+		if(xQueueReceive(xQueueCaractere,&(n_carac),(TickType_t) 0)){
+			index += n_carac;
+			index = index % 4;
+		}
+		//piscando
+		if(contador > 5){
+			gfx_mono_draw_string(' ',(index+2)*6,10,&sysfont);
+		}
+		contador++;
+		contador = contador % 10;
+		vTaskDelay(50);
+		
+		
+	}
+}
+
+
 
 /************************************************************************/
 /* funcoes                                                              */
