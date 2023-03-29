@@ -34,6 +34,11 @@ extern void xPortSysTickHandler(void);
 
 /** prototypes */
 QueueHandle_t xQueueValor;
+QueueHandle_t xQueueCaractere;
+
+volatile int dt_flag;
+volatile int clk_flag;
+
 void but_callback(void);
 
 void clk_callback(void);
@@ -68,23 +73,31 @@ void but_callback(void) {
 
 //sentido horario - clk cai antes
 void clk_callback(void){
-	if(pio_get(dt_PIO,PIO_INPUT,dt_PIO_PIN_MASK)){
+	// clk_flag = 1;
+	if(pio_get(dt_PIO,PIO_INPUT,dt_PIO_PIN_MASK)){ // && 
 		int valor = 1;
+  		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+  		xQueueSendFromISR(xQueueValor, &valor, &xHigherPriorityTaskWoken);
+	}else{
+		int valor = -1;
   		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
   		xQueueSendFromISR(xQueueValor, &valor, &xHigherPriorityTaskWoken);
 	};
 };
 
 //sentido anti horario - dt cai antes
-void dt_callback(void){
-	if(pio_get(sw_PIO,PIO_INPUT,sw_PIO_PIN_MASK)){
-		int valor = -1;
-  		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-  		xQueueSendFromISR(xQueueValor, &valor, &xHigherPriorityTaskWoken);
-	};
-};
+// void dt_callback(void){
+// 	dt_flag = 1;
+// 	if(!clk_flag){ //pio_get(sw_PIO,PIO_INPUT,sw_PIO_PIN_MASK) && 
+// 		int valor = -1;
+//   		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+//   		xQueueSendFromISR(xQueueValor, &valor, &xHigherPriorityTaskWoken);
+// 	};
+// };
 void sw_callback(void){
-	
+	int n_carac = 1;
+	BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+  	xQueueSendFromISR(xQueueCaractere, &n_carac, &xHigherPriorityTaskWoken);
 };
 /************************************************************************/
 /* TASKS                                                                */
@@ -92,19 +105,33 @@ void sw_callback(void){
 
 static void task_oled(void *pvParameters) {
 	gfx_mono_ssd1306_init();
-  	gfx_mono_draw_string("Testando", 0, 0, &sysfont);
-  	char string_soma[3];
+  	char string_soma[10];
+	char string_index[10];
   
   
 	int valor;
+	
+	int n_carac;
+
 	int soma = 0;
+	int index = 0;
 	for (;;)  {
-		
 		if(xQueueReceive(xQueueValor,&(valor),(TickType_t) 0)){
+			clk_flag = 0;
+			dt_flag = 0;
 			soma = soma+valor;
-			sprintf(string_soma,"%d",soma);
-			gfx_mono_draw_string(string_soma, 0, 20, &sysfont);
+			soma = soma % 15;
+			sprintf(string_soma,"soma: %d ",soma);
+			gfx_mono_draw_string(string_soma, 0, 10, &sysfont);
 		}
+		if(xQueueReceive(xQueueCaractere,&(n_carac),(TickType_t) 0)){
+			index += n_carac;
+			index = index % 4;
+			sprintf(string_index,"index: %d ",index);
+			gfx_mono_draw_string(string_index, 50, 25, &sysfont);
+		}
+		
+		
 	}
 }
 
@@ -147,12 +174,12 @@ static void BUT_init(void) {
 	//CONFIGS PARA dt
 	pio_configure(dt_PIO, PIO_INPUT, dt_PIO_PIN_MASK, PIO_DEBOUNCE);
 	pio_set_debounce_filter(dt_PIO, dt_PIO_PIN_MASK, 60);
-	pio_handler_set(dt_PIO, dt_PIO_ID, dt_PIO_PIN_MASK, PIO_IT_FALL_EDGE , dt_callback);
-	pio_enable_interrupt(dt_PIO, dt_PIO_PIN_MASK);
-	pio_get_interrupt_status(dt_PIO);
+	// pio_handler_set(dt_PIO, dt_PIO_ID, dt_PIO_PIN_MASK, PIO_IT_FALL_EDGE , dt_callback);
+	// pio_enable_interrupt(dt_PIO, dt_PIO_PIN_MASK);
+	// pio_get_interrupt_status(dt_PIO);
 
-	NVIC_EnableIRQ(dt_PIO_ID);
-	NVIC_SetPriority(dt_PIO_ID, 4);
+	// NVIC_EnableIRQ(dt_PIO_ID);
+	// NVIC_SetPriority(dt_PIO_ID, 4);
 
 
 	//CONFIGS PARA sw
@@ -180,6 +207,10 @@ int main(void) {
 	xQueueValor = xQueueCreate(100, sizeof(int));
 	if (xQueueValor == NULL)
 		printf("falha em criar a queue xQueueValor \n");
+
+	xQueueCaractere = xQueueCreate(100, sizeof(int));
+	if (xQueueCaractere == NULL)
+		printf("falha em criar a queue xQueueCaractere \n");
 	/* Initialize the console uart */
 	configure_console();
 
