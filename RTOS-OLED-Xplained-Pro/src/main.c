@@ -160,9 +160,9 @@ static void task_oled(void *pvParameters) {
 			int i = 0;
 			while(i<10){
 				pio_clear(LED_1_PIO, LED_1_IDX_MASK);
-				vTaskDelay(1000);
+				vTaskDelay(200);
 				pio_set(LED_1_PIO, LED_1_IDX_MASK);
-				vTaskDelay(1000);
+				vTaskDelay(200);
 				i++;
 			}
 
