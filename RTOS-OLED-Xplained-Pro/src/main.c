@@ -142,8 +142,8 @@ static void task_oled(void *pvParameters) {
 		if(xQueueReceive(xQueueValor,&(valor),(TickType_t) 0)){
 			soma[index] = soma[index]+valor;
 			soma[index] = soma[index] % 15;
-			if(soma[index] <= 0){
-				soma[index] = 0;
+			if(soma[index] < 0){
+				soma[index] = 15;
 			}
 			sprintf(string_soma,"0x%x%x%x%x ",soma[0],soma[1],soma[2],soma[3]);
 		}
