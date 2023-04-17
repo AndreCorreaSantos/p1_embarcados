@@ -20,79 +20,51 @@ def get_data():
     data = ser.readline().decode().strip()
     return float(data)
 
-# This function is called periodically from FuncAnimation
-# def animate(i, xs, ys):
-
-#     # Read temperature (Celsius) from TMP102
-#     try:
-#         data = get_data()
-#     except:
-#         data = 1.00
-#     print(data)
-
-#     # Add x and y to lists
-#     xs.append(round(time.time()-start_time,2))
-#     ys.append(data)
-    
-#     if len(xs) > 25:
-#         xs.pop(0)
-
-#     if len(ys) > 25:
-#         xs.pop(0)
-
-#     # Limit x and y lists to 20 items
-#     xs = xs[-20:]
-#     ys = ys[-20:]
-
-#     # Draw x and y lists
-#     ax.clear()
-#     ax.plot(xs, ys)
-
-#     ax.set_ylim([0, 5])
-
-#     # Format plot
-#     plt.xticks(rotation=0, ha='right')
-#     plt.subplots_adjust(bottom=0.30)
-#     plt.title('Acceleration over time')
-#     plt.ylabel('acceleration')
-
 def animate(i, xs, ys):
     # Read temperature (Celsius) from TMP102
     try:
         data = get_data()
     except:
         data = 1.00
-    print(data)
 
     # Add x and y to lists
     xs.append(round(time.time()-start_time,2))
     ys.append(data)
 
-    if len(xs) > 25:
+
+    # Limit x and y lists to 20 items
+    xs = xs[-73:]
+    ys = ys[-73:]
+
+    if len(xs)>75:
         xs.pop(0)
 
-    if len(ys) > 25:
+
+    if len(ys)>75:
         ys.pop(0)
+
+    print(len(xs))
 
     # Perform FFT on y values
     n = len(ys)
     yf = fft(ys)
     xf = fftfreq(n, 1 / 25)[:n // 2]
 
-    # Update amplitude vs frequency plot data
-    line.set_data(xf, 2.0 / n * np.abs(yf[0:n//2]))
+    # Draw amplitude vs frequency plot
+    ax.clear()
+    ax.plot(xf, 2.0 / n * np.abs(yf[0:n//2]))
+
+    ax.set_ylim([0, 2])
+    ax.set_xlim([1.5, 20])
 
     # Format plot
-    ax.set_ylim([0, 5])
     plt.xticks(rotation=0, ha='right')
     plt.subplots_adjust(bottom=0.30)
     plt.title('Amplitude vs Frequency')
     plt.ylabel('Amplitude')
     plt.xlabel('Frequency (Hz)')
 
-    return line,
-
 # Set up plot to call animate() function periodically
 
-ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=10)
+ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=100)
 plt.show()
