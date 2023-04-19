@@ -29,6 +29,7 @@ def animate(i, xs, ys):
 
     # Add x and y to lists
     xs.append(round(time.time()-start_time,2))
+    # print(xs)
     ys.append(data)
 
 
@@ -43,7 +44,7 @@ def animate(i, xs, ys):
     if len(ys)>75:
         ys.pop(0)
 
-    print(len(xs))
+    # print(len(xs))
 
     # Perform FFT on y values
     n = len(ys)
