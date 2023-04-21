@@ -4,8 +4,11 @@ import matplotlib.animation as animation
 import serial
 import numpy as np
 from scipy.fft import fft, fftfreq
-
+import platform
 import numpy as np
+import subprocess
+import spotify_requests
+
 
 # Create figure for plotting
 fig = plt.figure()
@@ -14,18 +17,45 @@ xs = []
 ys = []
 
 start_time = time.time()
+last_data = 0
+
+
+def get_port():
+    system = platform.system()
+    if system == 'Windows':
+        port = 'COM3'
+         #no windows tem que estar ligado na com3
+    else: #linux
+        output = subprocess.check_output(["./detect_ports.sh"])
+        for line in output.decode().splitlines():
+            if "Atmel" in line:
+                port = line.split(" ")[0]
+    return port
+
 
 def get_data():
-    ser = serial.Serial('COM3', 115200)
-    data = ser.readline().decode().strip()
-    return float(data)
+    
+    port = get_port()
+    ser = serial.Serial(port, 115200)
+    global last_data
+    try:
+        data = float(ser.readline().decode().strip())
+    except:
+        data = last_data
+
+    if data > 10 or data < 0.00000001: #estou tendo erros periodicos na leitura do serial. LEMBRAR DISSO
+        data = last_data
+
+    last_data = data
+    return data
 
 def animate(i, xs, ys):
     # Read temperature (Celsius) from TMP102
-    try:
-        data = get_data()
-    except:
-        data = 1.00
+    # try:
+    data = get_data()
+    #print(data)
+    # except:
+    #     data = 1.00
 
     # Add x and y to lists
     xs.append(round(time.time()-start_time,2))
@@ -59,6 +89,8 @@ def animate(i, xs, ys):
     ax.set_xlim([1.5, 20])
 
     # Format plot
+    if(len(xf)> 0):
+        print(xf)
     plt.xticks(rotation=0, ha='right')
     plt.subplots_adjust(bottom=0.30)
     plt.title('Amplitude vs Frequency')
