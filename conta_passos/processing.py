@@ -89,8 +89,8 @@ def animate(i, xs, ys):
     ax.set_xlim([1.5, 20])
 
     # Format plot
-    if(len(xf)> 0):
-        print(xf)
+    # if(len(xf)> 0):
+    #     print(xf)
     plt.xticks(rotation=0, ha='right')
     plt.subplots_adjust(bottom=0.30)
     plt.title('Amplitude vs Frequency')
@@ -99,5 +99,5 @@ def animate(i, xs, ys):
 
 # Set up plot to call animate() function periodically
 
-ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=100)
-plt.show()
+# ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=100)
+# plt.show()

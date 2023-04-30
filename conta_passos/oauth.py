@@ -65,7 +65,9 @@ async def callback(code):
 
 @app.get("/main")
 async def main(request: Request): #preciso mandar os dados da outra thread via request para esse endpoint mas somente mudar de musica quando usuario clicar em nova musica
-    track_uri = play_song("tecno {} bpm".format(bpm))
+    # bpm = last_data
+    # track_uri = play_song("tecno {} bpm".format(bpm))
+    track_uri = play_song("tecno")
     response = requests.put(
         f"https://api.spotify.com/v1/me/player/play",
         headers=headers,
@@ -76,6 +78,11 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
         html_content = f.read()
 
     return HTMLResponse(content=html_content)
+
+@app.put("/main")
+async def dataMain(request: Request):
+    data = await request.json()
+    print(data)
 
 
 
