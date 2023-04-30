@@ -25,16 +25,12 @@ def get_auth_token():
         print(response.json()['error'])
 
 
-def run():
+def play_song(song_string):
     auth_token = get_auth_token()
     client = SpotifyClient(auth_token)
-    playlist_url = client.get_playlist_url('200 bpm techno')
+    playlist_url = client.get_playlist_url(song_string)
     track_id = client.get_track_id_from_playlist(playlist_url)
-    track_string = "spotify:track:"+track_id
-    print(client.pause_track())
+    return "spotify:track:"+track_id
     
-
-
-run()
 
     
