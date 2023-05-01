@@ -1,8 +1,6 @@
 import threading
-import queue
 from processing import get_data
 import requests
-from time import sleep
 
 # Define the first thread
 def threadData():
@@ -10,11 +8,7 @@ def threadData():
     while(True):
         data = get_data() #mandar data para endpoint do servidor
         body = {'data':data} 
-        try:
-            response = requests.put("http://127.0.0.1:8000/main",json=body)
-        except:
-            print("ai")
-            pass
+        response = requests.put("http://127.0.0.1:8000/main",json=body)
 
 
 # Define the second thread

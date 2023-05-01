@@ -49,23 +49,33 @@ def get_data():
     last_data = data
     return data
 
+def get_raw_data():
+    port = get_port()
+    ser = serial.Serial(port, 115200)
+    return ser.readline().decode().strip()
+
 def animate(i, xs, ys):
     # Read temperature (Celsius) from TMP102
     # try:
-    data = get_data()
+    raw = get_raw_data()
+    print(raw)
+    data = float(raw)
     #print(data)
     # except:
     #     data = 1.00
 
     # Add x and y to lists
-    xs.append(round(time.time()-start_time,2))
+    global start_time
+
+    time_now = round(time.time()-start_time,2)
+    if(time_now > 20):
+        start_time = time_now
+    xs.append(time_now)
     # print(xs)
     ys.append(data)
 
 
-    # Limit x and y lists to 20 items
-    xs = xs[-73:]
-    ys = ys[-73:]
+    # Limit x and y lists to 20 item
 
     if len(xs)>75:
         xs.pop(0)
@@ -77,14 +87,14 @@ def animate(i, xs, ys):
     # print(len(xs))
 
     # Perform FFT on y values
-    n = len(ys)
-    yf = fft(ys)
-    xf = fftfreq(n, 1 / 25)[:n // 2]
+    # n = len(ys)
+    # yf = fft(ys)
+    # xf = fftfreq(n, 1 / 25)[:n // 2]
 
     # Draw amplitude vs frequency plot
     ax.clear()
-    ax.plot(xf, 2.0 / n * np.abs(yf[0:n//2]))
-
+    # ax.plot(xf, 2.0 / n * np.abs(yf[0:n//2]))
+    ax.plot(xs,ys)
     ax.set_ylim([0, 2])
     ax.set_xlim([1.5, 20])
 
@@ -97,7 +107,15 @@ def animate(i, xs, ys):
     plt.ylabel('Amplitude')
     plt.xlabel('Frequency (Hz)')
 
+
+def max_fft_freq(data):
+    fft_data = np.fft.fft(data)
+    freqs = np.fft.fftfreq(len(fft_data))
+    mask = (freqs > 0.3)
+    idx = np.argmax(np.abs(fft_data[mask]))
+    return freqs[mask][idx]*60 #convertendo para bpm 
+
 # Set up plot to call animate() function periodically
 
-# ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=100)
-# plt.show()
+ani = animation.FuncAnimation(fig, animate, fargs=(xs, ys), interval=100)
+plt.show()

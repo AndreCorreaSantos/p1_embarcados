@@ -4,6 +4,8 @@ from secrets_client import *
 import requests
 import uvicorn
 from spotify_requests import *
+from processing import max_fft_freq
+import matplotlib.pyplot as plt
 
 
 # client_id = "YOUR_CLIENT_ID"
@@ -35,6 +37,8 @@ async def auth():
     return HTMLResponse(content=f'<a href="{auth_url}">Authorize</a>')
 
 headers = ''
+data_list = []
+
 @app.get("/callback")
 async def callback(code):
     global headers
@@ -67,6 +71,7 @@ async def callback(code):
 async def main(request: Request): #preciso mandar os dados da outra thread via request para esse endpoint mas somente mudar de musica quando usuario clicar em nova musica
     # bpm = last_data
     # track_uri = play_song("tecno {} bpm".format(bpm))
+    #perform fft in data_list
     track_uri = play_song("tecno")
     response = requests.put(
         f"https://api.spotify.com/v1/me/player/play",
@@ -74,15 +79,25 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
         json={"uris": [track_uri]},
     )
 
+
     with open("main.html", "r") as f:
         html_content = f.read()
 
+
+    html_content = html_content.format(max_fft_freq(data_list))
     return HTMLResponse(content=html_content)
 
+max_val = 50
 @app.put("/main")
 async def dataMain(request: Request):
+    global data_list
+    global data
+    
     data = await request.json()
-    print(data)
+    data = data['data']
+    data_list.append(data)
+    if(len(data_list) > max_val):
+        data_list.pop(0)
 
 
 
