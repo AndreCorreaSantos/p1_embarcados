@@ -7,7 +7,6 @@ from scipy.fft import fft, fftfreq
 import platform
 import numpy as np
 import subprocess
-import spotify_requests
 
 
 # Create figure for plotting
@@ -43,7 +42,7 @@ def get_data():
     except:
         data = last_data
 
-    if data > 10 or data < 0.00000001: #estou tendo erros periodicos na leitura do serial. LEMBRAR DISSO
+    if abs(data-last_data) > 5 or abs(data-last_data) < 0.05: #estou tendo erros periodicos na leitura do serial. LEMBRAR DISSO
         data = last_data
 
     last_data = data
@@ -57,10 +56,7 @@ def get_raw_data():
 def animate(i, xs, ys):
     # Read temperature (Celsius) from TMP102
     # try:
-    raw = get_raw_data()
-    print(raw)
-    data = float(raw)
-    #print(data)
+    data = get_data()
     # except:
     #     data = 1.00
 
@@ -68,8 +64,9 @@ def animate(i, xs, ys):
     global start_time
 
     time_now = round(time.time()-start_time,2)
-    if(time_now > 20):
-        start_time = time_now
+    # if start_time > 20:
+    #     start_time = time_now
+
     xs.append(time_now)
     # print(xs)
     ys.append(data)
@@ -89,14 +86,17 @@ def animate(i, xs, ys):
     # Perform FFT on y values
     # n = len(ys)
     # yf = fft(ys)
-    # xf = fftfreq(n, 1 / 25)[:n // 2]
+    # xf = fftfreq(len(ys))
 
     # Draw amplitude vs frequency plot
     ax.clear()
     # ax.plot(xf, 2.0 / n * np.abs(yf[0:n//2]))
     ax.plot(xs,ys)
-    ax.set_ylim([0, 2])
-    ax.set_xlim([1.5, 20])
+    if len(ys)>5:
+        print(max_fft_freq(ys))
+
+    ax.set_ylim([0, 2.5])
+    ax.set_xlim([0, 20])
 
     # Format plot
     # if(len(xf)> 0):
