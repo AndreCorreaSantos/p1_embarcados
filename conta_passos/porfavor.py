@@ -9,4 +9,5 @@ def get_data():
     return data
 
 while True:
+    print(1)
     print(get_data())

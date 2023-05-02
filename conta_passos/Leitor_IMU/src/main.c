@@ -64,6 +64,8 @@ static void BUT_init(void);
 QueueHandle_t xQueueOrientacao;
 SemaphoreHandle_t xSemaphoreHouseDown;
 
+volatile int up = 0;
+
 int8_t mcu6050_i2c_bus_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t cnt);
 int8_t mcu6050_i2c_bus_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t cnt);
 
@@ -328,13 +330,15 @@ static void task_imu(void *pvParameters) {
 		
  		//printf("%f",acc);
 		//printf("%d",em_queda);
-		if(acc-lastAcc > 0.9){
+		if((acc-lastAcc > 0.9) && (up == 0)){
 			
-			//printf("%d",1);
-			passos++;
-			printf("%d",passos);
+			printf("%d",1);
+			//passos++;
+			//printf("%d",passos);
+			up = 1;
 		}else{
 			//printf("%d",0);
+			up = 0;
 		}
 		lastAcc = acc;
 		

@@ -49,14 +49,14 @@ def get_data():
     return data
 
 def get_raw_data():
-    port = get_port()
-    ser = serial.Serial(port, 115200)
+    ser = serial.Serial('COM3', 115200)
     return ser.readline().decode().strip()
 
 def animate(i, xs, ys):
     # Read temperature (Celsius) from TMP102
     # try:
-    data = get_data()
+    data = get_raw_data()
+    print(data)
     # except:
     #     data = 1.00
 
@@ -92,8 +92,6 @@ def animate(i, xs, ys):
     ax.clear()
     # ax.plot(xf, 2.0 / n * np.abs(yf[0:n//2]))
     ax.plot(xs,ys)
-    if len(ys)>5:
-        print(max_fft_freq(ys))
 
     ax.set_ylim([0, 2.5])
     ax.set_xlim([0, 20])
@@ -108,12 +106,6 @@ def animate(i, xs, ys):
     plt.xlabel('Frequency (Hz)')
 
 
-def max_fft_freq(data):
-    fft_data = np.fft.fft(data)
-    freqs = np.fft.fftfreq(len(fft_data))
-    mask = (freqs > 0.3)
-    idx = np.argmax(np.abs(fft_data[mask]))
-    return freqs[mask][idx]*60 #convertendo para bpm 
 
 # Set up plot to call animate() function periodically
 

@@ -8,7 +8,6 @@ from scipy.fft import fft, fftfreq
 import platform
 import numpy as np
 import subprocess
-import spotify_requests
 
 
 # Create figure and axis for plotting

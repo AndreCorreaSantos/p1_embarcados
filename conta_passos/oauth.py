@@ -72,7 +72,8 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
     # bpm = last_data
     # track_uri = play_song("tecno {} bpm".format(bpm))
     #perform fft in data_list
-    track_uri = play_song("tecno")
+    rounded_data = (round(data)%10)*10
+    track_uri = play_song("tecno {} bpm".format(rounded_data))
     response = requests.put(
         f"https://api.spotify.com/v1/me/player/play",
         headers=headers,
@@ -84,20 +85,16 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
         html_content = f.read()
 
 
-    html_content = html_content.format(max_fft_freq(data_list))
+    html_content = html_content.format(rounded_data)
     return HTMLResponse(content=html_content)
 
 max_val = 50
 @app.put("/main")
 async def dataMain(request: Request):
-    global data_list
     global data
     
     data = await request.json()
     data = data['data']
-    data_list.append(data)
-    if(len(data_list) > max_val):
-        data_list.pop(0)
 
 
 
