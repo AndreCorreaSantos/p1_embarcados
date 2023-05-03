@@ -1,16 +1,30 @@
 import threading
-from processing import get_data
 import requests
 import serial
 import time
 import numpy as np
+import platform
+import subprocess
+
+
+def get_port():
+    system = platform.system()
+    if system == 'Windows':
+        port = 'COM3'
+         #no windows tem que estar ligado na com3
+    else: #linux
+        output = subprocess.check_output(["./detect_ports.sh"])
+        for line in output.decode().splitlines():
+            if "Atmel" in line:
+                port = line.split(" ")[0]
+    return port
 
 # Define the first thread
 def threadData():
     # do some work
+    port = get_port()
+    ser = serial.Serial(port, baudrate=115200, timeout=1)
     while(True):
-
-        ser = serial.Serial('COM3', baudrate=115200, timeout=1)
 
         # read data from the serial port
         time_list = []
@@ -27,7 +41,7 @@ def threadData():
                     time_list.pop(0)
                 bpm = (1/np.average(time_list))*60 #pegando frequencia media dos ultimos 10 passos
                 last_time = time_now
-                body = {'data':bpm} 
+                body = {'data':round(bpm/10)*10} 
                 response = requests.put("http://127.0.0.1:8000/main",json=body)
 
 

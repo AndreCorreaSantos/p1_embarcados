@@ -4,8 +4,8 @@ from secrets_client import *
 import requests
 import uvicorn
 from spotify_requests import *
-from processing import max_fft_freq
-import matplotlib.pyplot as plt
+
+
 
 
 # client_id = "YOUR_CLIENT_ID"
@@ -72,8 +72,11 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
     # bpm = last_data
     # track_uri = play_song("tecno {} bpm".format(bpm))
     #perform fft in data_list
-    rounded_data = (round(data)%10)*10
-    track_uri = play_song("tecno {} bpm".format(rounded_data))
+    data_str = "tecno {0} bpm".format(data)
+    track_uri = play_song(data_str)
+    print('A'*10)
+    print(track_uri)
+    print('A'*10)
     response = requests.put(
         f"https://api.spotify.com/v1/me/player/play",
         headers=headers,
@@ -85,10 +88,11 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
         html_content = f.read()
 
 
-    html_content = html_content.format(rounded_data)
+    html_content = html_content.format(data)
     return HTMLResponse(content=html_content)
 
 max_val = 50
+data = 0
 @app.put("/main")
 async def dataMain(request: Request):
     global data
