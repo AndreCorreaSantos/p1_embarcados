@@ -33,9 +33,10 @@ class SpotifyClient(object):
             }
         )
         tracks = response.json()
+        
+        rand_n = random.randint(0,len(tracks['items'])-1)
 
-
-        return tracks['items'][0]['track']['id'] #getting the id from the first track of the playlist
+        return tracks['items'][rand_n]['track']['id'] #getting the id from the first track of the playlist
 
     def play_track(self,track_id):
 

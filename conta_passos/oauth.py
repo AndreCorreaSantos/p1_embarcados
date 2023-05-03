@@ -46,33 +46,25 @@ async def callback(code):
     response = requests.get("https://api.spotify.com/v1/me", headers=headers)
     user_id = response.json()["id"]
 
-    name = "Name of your playlist"
-    description = "Description of your playlist"
-
-    params = {
-        "name": name,
-        "description": description,
-        "public": True,
-    }
-
-    track_uri = play_song("clowncore flat earth")
-    response = requests.put(
-        f"https://api.spotify.com/v1/me/player/play",
-        headers=headers,
-        json={"uris": [track_uri]},
-    )
-
     with open("main.html", "r") as f:
         html_content = f.read()
 
     return HTMLResponse(content=html_content)
+
+max_val = 50
+steps = 0
+heart = 0
+choice = 0
 
 @app.get("/main")
 async def main(request: Request): #preciso mandar os dados da outra thread via request para esse endpoint mas somente mudar de musica quando usuario clicar em nova musica
     # bpm = last_data
     # track_uri = play_song("tecno {} bpm".format(bpm))
     #perform fft in data_list
-    data_str = "tecno {0} bpm".format(data)
+    if choice: #mudando entre 
+        data_str = "tecno {0} bpm".format(heart) 
+    else:
+        data_str = "tecno {0} bpm".format(steps)
     track_uri = play_song(data_str)
     response = requests.put(
         f"https://api.spotify.com/v1/me/player/play",
@@ -85,18 +77,19 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
         html_content = f.read()
 
 
-    html_content = html_content.format(data)
+    html_content = html_content.format(steps,heart)
     return HTMLResponse(content=html_content)
 
-max_val = 50
-data = 0
+
 @app.put("/main")
 async def dataMain(request: Request):
-    global data
+    global steps
+    global heart
     
-    data = await request.json()
-    data = data['data']
-
+    req = await request.json()
+    steps = req['steps']
+    heart = req['heart']
+    choice = req['choice']
 
 
 uvicorn.run(app)
