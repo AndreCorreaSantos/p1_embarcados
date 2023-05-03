@@ -28,6 +28,7 @@ def get_auth_token():
 def play_song(song_string):
     auth_token = get_auth_token()
     client = SpotifyClient(auth_token)
+    print(song_string)
     playlist_url = client.get_playlist_url(song_string)
     track_id = client.get_track_id_from_playlist(playlist_url)
     return "spotify:track:"+track_id

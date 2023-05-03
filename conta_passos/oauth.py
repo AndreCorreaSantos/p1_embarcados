@@ -74,9 +74,6 @@ async def main(request: Request): #preciso mandar os dados da outra thread via r
     #perform fft in data_list
     data_str = "tecno {0} bpm".format(data)
     track_uri = play_song(data_str)
-    print('A'*10)
-    print(track_uri)
-    print('A'*10)
     response = requests.put(
         f"https://api.spotify.com/v1/me/player/play",
         headers=headers,
